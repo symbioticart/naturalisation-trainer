@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naturalisation Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8;
+  --bg2: #F1EFE8;
+  --bg3: #fff;
+  --text: #2C2C2A;
+  --text2: #5F5E5A;
+  --text3: #888780;
+  --border: rgba(0,0,0,0.1);
+  --accent: #185FA5;
+  --accent-bg: #E6F1FB;
+  --accent-text: #0C447C;
+  --green: #0F6E56;
+  --green-bg: #E1F5EE;
+  --green-text: #085041;
+  --amber: #854F0B;
+  --amber-bg: #FAEEDA;
+  --coral: #993C1D;
+  --coral-bg: #FAECE7;
+  --purple: #534AB7;
+  --purple-bg: #EEEDFE;
+  --purple-text: #3C3489;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --font: 'DM Sans', -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a18;
+    --bg2: #2C2C2A;
+    --bg3: #222220;
+    --text: #e8e6dd;
+    --text2: #B4B2A9;
+    --text3: #888780;
+    --border: rgba(255,255,255,0.1);
+    --accent-bg: #042C53;
+    --accent-text: #85B7EB;
+    --green-bg: #04342C;
+    --green-text: #5DCAA5;
+    --amber-bg: #412402;
+    --amber: #EF9F27;
+    --coral-bg: #4A1B0C;
+    --coral: #F0997B;
+    --purple-bg: #26215C;
+    --purple-text: #AFA9EC;
+  }
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.6; min-height:100vh; }
+.app { max-width:520px; margin:0 auto; padding:16px; }
+.header { text-align:center; padding:20px 0 16px; }
+.header h1 { font-size:22px; font-weight:500; letter-spacing:-0.3px; }
+.header p { font-size:13px; color:var(--text3); margin-top:2px; }
+.nav { display:flex; gap:4px; background:var(--bg2); padding:4px; border-radius:var(--radius); margin-bottom:20px; overflow-x:auto; }
+.nav button { flex:1; min-width:0; padding:8px 4px; border:none; background:transparent; font-family:var(--font); font-size:12px; font-weight:400; color:var(--text2); border-radius:7px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.nav button.active { background:var(--bg3); color:var(--text); font-weight:500; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.screen { display:none; }
+.screen.active { display:block; }
+.card { background:var(--bg3); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:16px 18px; margin-bottom:12px; }
+.label { font-size:11px; font-weight:500; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+.question-fr { font-size:17px; font-weight:500; line-height:1.4; margin-bottom:4px; }
+.question-ru { font-size:13px; color:var(--text3); font-style:italic; }
+.chunks { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
+.chunk { font-size:12px; padding:4px 10px; border-radius:var(--radius); background:var(--purple-bg); color:var(--purple-text); font-weight:500; }
+.textarea { width:100%; min-height:90px; padding:10px 12px; border-radius:var(--radius); border:0.5px solid var(--border); font-size:14px; font-family:var(--font); background:var(--bg); color:var(--text); resize:vertical; line-height:1.6; transition:border-color .15s; }
+.textarea:focus { outline:none; border-color:var(--accent); }
+.btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.btn { padding:8px 14px; border-radius:var(--radius); border:0.5px solid var(--border); background:transparent; font-size:13px; cursor:pointer; font-family:var(--font); color:var(--text); transition:all .15s; font-weight:400; }
+.btn:hover { background:var(--bg2); }
+.btn:active { transform:scale(0.98); }
+.btn-primary { background:var(--accent-bg); color:var(--accent-text); border-color:transparent; }
+.btn-primary:hover { opacity:0.9; background:var(--accent-bg); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+.ai-box { margin-top:12px; padding:12px 14px; background:var(--green-bg); color:var(--green-text); border-radius:var(--radius); font-size:13px; line-height:1.6; display:none; }
+.ai-box.error { background:var(--coral-bg); color:var(--coral); }
+.ai-box.visible { display:block; }
+.answer-block { font-size:14px; line-height:1.7; padding:12px 14px; background:var(--bg); border-radius:var(--radius); margin-top:8px; }
+.answer-ru { font-size:12px; color:var(--text3); font-style:italic; margin-top:6px; line-height:1.5; }
+.var-tabs { display:flex; gap:4px; margin:10px 0; }
+.var-tab { font-size:11px; padding:4px 12px; border-radius:var(--radius); border:0.5px solid var(--border); background:transparent; cursor:pointer; color:var(--text2); font-family:var(--font); transition:all .15s; }
+.var-tab.active { background:var(--bg2); color:var(--text); font-weight:500; }
+.pager { display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+.pager-info { font-size:12px; color:var(--text3); }
+.fact-card { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; gap:12px; }
+.fact-q { font-size:14px; font-weight:500; flex:1; }
+.fact-a { font-size:14px; color:var(--accent-text); text-align:right; transition:all .2s; }
+.fact-hidden { color:transparent; background:var(--bg2); border-radius:4px; padding:2px 8px; user-select:none; }
+.stat-row { display:flex; gap:10px; margin-bottom:16px; }
+.stat-card { flex:1; background:var(--bg2); border-radius:var(--radius); padding:14px; text-align:center; }
+.stat-num { font-size:24px; font-weight:500; }
+.stat-label { font-size:11px; color:var(--text3); margin-top:2px; }
+.q-list { list-style:none; }
+.q-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--border); font-size:13px; cursor:pointer; transition:background .1s; }
+.q-item:last-child { border-bottom:none; }
+.q-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.q-dot.mastered { background:var(--green); }
+.q-dot.learning { background:var(--amber); }
+.q-dot.new { background:var(--border); }
+.progress-bar { height:4px; background:var(--bg2); border-radius:2px; margin-top:10px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--green); border-radius:2px; transition:width .3s; }
+.settings-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:0.5px solid var(--border); }
+.settings-row:last-child { border-bottom:none; }
+.settings-label { font-size:13px; }
+.settings-input { font-size:13px; padding:6px 10px; border:0.5px solid var(--border); border-radius:var(--radius); background:var(--bg); color:var(--text); font-family:var(--font); width:240px; }
+.loading { text-align:center; padding:40px; color:var(--text3); font-size:14px; }
+.sim-question { font-size:20px; font-weight:500; text-align:center; padding:20px 0; line-height:1.4; }
+.hint-text { font-size:12px; color:var(--text3); text-align:center; margin-top:8px; }
+.sr-toggle { display:flex; align-items:center; gap:8px; margin:12px 0; font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="header">
+    <h1>Naturalisation trainer</h1>
+    <p id="status-line">Loading data...</p>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="showScreen('core')">Core</button>
+    <button onclick="showScreen('variations')">Variations</button>
+    <button onclick="showScreen('sim')">Simulation</button>
+    <button onclick="showScreen('facts')">Facts</button>
+    <button onclick="showScreen('progress')">Progress</button>
+    <button onclick="showScreen('settings')">Settings</button>
+  </div>
+
+  <div id="screen-core" class="screen active"></div>
+  <div id="screen-variations" class="screen"></div>
+  <div id="screen-sim" class="screen"></div>
+  <div id="screen-facts" class="screen"></div>
+  <div id="screen-progress" class="screen"></div>
+  <div id="screen-settings" class="screen"></div>
+</div>
+
+<script>
+const FALLBACK_DATA = {
+  questions: [
+    { id:'q1', questionFr:'Présentez-vous', questionRu:'Представьтесь', chunks:['architecte','Peillon','Tatiana','Solaris','municipalités'],
+      variations:[
+        {label:'A', fr:"Je m'appelle Nikolai. Je suis architecte. Je vis à Peillon avec ma femme. Je développe une start-up, Solaris.", ru:'Меня зовут Николай. Я архитектор. Живу в Пейоне с женой. Развиваю стартап Solaris.'},
+        {label:'B', fr:"Je m'appelle Nikolai Grigoriev. Je suis architecte de formation. Je vis en France depuis 2022, à Peillon, près de Nice, avec ma femme Tatiana et notre chienne. En ce moment, je développe une start-up, Solaris — nous travaillons avec les municipalités pour restaurer des terres agricoles abandonnées.", ru:'Меня зовут Николай Григорьев. Я архитектор по образованию. Живу во Франции с 2022 года, в Пейоне, рядом с Ниццей, с женой Татьяной и собакой. Развиваю стартап Solaris — работаем с муниципалитетами над восстановлением заброшенных сельхозземель.'},
+        {label:'C', fr:"Nikolai Grigoriev. Architecte. J'habite à Peillon. Ma femme est ici. J'ai une start-up — Solaris.", ru:'Николай Григорьев. Архитектор. Живу в Пейоне. Жена здесь. У меня стартап — Solaris.'}
+      ], followUps:['Que fait exactement votre start-up ?','Que faisiez-vous avant la start-up ?']},
+    { id:'q2', questionFr:'Depuis quand vivez-vous en France ?', questionRu:'С какого времени вы живёте во Франции?', chunks:['depuis 2022','Paris','Nice','Peillon','sud'],
+      variations:[
+        {label:'A', fr:"Je vis en France depuis 2022.", ru:'Живу во Франции с 2022 года.'},
+        {label:'B', fr:"Je vis en France depuis 2022. D'abord à Paris, puis à Nice, et maintenant à Peillon, près de Nice. J'ai choisi le sud parce que c'est la région qui me convient le mieux.", ru:'Живу во Франции с 2022 года. Сначала в Париже, потом в Ницце, сейчас в Пейоне. Выбрал юг — этот регион мне подходит больше всего.'},
+        {label:'C', fr:"Depuis 2022. Peillon, près de Nice.", ru:'С 2022. Пейон, рядом с Ниццей.'}
+      ], followUps:['Pourquoi avez-vous choisi cette région ?']},
+    { id:'q3', questionFr:'Où habitez-vous exactement ?', questionRu:'Где именно вы живёте?', chunks:['Peillon','village','montagne','Nice','20 minutes'],
+      variations:[
+        {label:'A', fr:"J'habite à Peillon, un village dans les montagnes, à 20 minutes de Nice.", ru:'Живу в Пейоне — деревня в горах, 20 минут от Ниццы.'},
+        {label:'B', fr:"J'habite à Peillon — c'est un petit village perché dans les montagnes au-dessus de Nice. C'est calme, beau, et j'aime beaucoup y vivre. On connaît le maire personnellement.", ru:'Живу в Пейоне — маленькая горная деревня над Ниццей. Тихо, красиво, мне очень нравится. Лично знаком с мэром.'},
+        {label:'C', fr:"Peillon. Village près de Nice, dans les montagnes.", ru:'Пейон. Деревня рядом с Ниццей, в горах.'}
+      ], followUps:['Vous connaissez vos voisins ?']},
+    { id:'q4', questionFr:'Quelle est votre situation familiale ?', questionRu:'Какова ваша семейная ситуация?', chunks:['marié','Tatiana','chienne','Etra','Peillon'],
+      variations:[
+        {label:'A', fr:"Je suis marié. Ma femme Tatiana vit avec moi à Peillon.", ru:'Женат. Жена Татьяна живёт со мной в Пейоне.'},
+        {label:'B', fr:"Je suis marié avec Tatiana. Elle vit avec moi à Peillon, elle a un titre de séjour en tant que conjoint. Nous avons aussi une chienne — Etra, un braque hongrois.", ru:'Женат на Татьяне. Она живёт со мной в Пейоне, у неё titre de séjour как супруги. У нас ещё собака — Этра, венгерская выжла.'},
+        {label:'C', fr:"Marié. Tatiana. Peillon.", ru:'Женат. Татьяна. Пейон.'}
+      ], followUps:['Que fait votre femme ?','Avez-vous des enfants ?']},
+    { id:'q5', questionFr:'Que faites-vous comme travail ?', questionRu:'Чем вы занимаетесь?', chunks:['start-up','Solaris','agricole','Oasis','municipalités'],
+      variations:[
+        {label:'A', fr:"Je développe une start-up qui s'appelle Solaris. On travaille avec les municipalités pour restaurer des terres agricoles.", ru:'Развиваю стартап Solaris. Работаем с муниципалитетами над восстановлением сельхозземель.'},
+        {label:'B', fr:"Je suis entrepreneur. Ma start-up Solaris restaure des terres agricoles abandonnées en partenariat avec les municipalités françaises. Nous créons des espaces préparés pour le jardinage — des « Oasis » — avec une infrastructure commune, que nous louons aux habitants.", ru:'Я предприниматель. Мой стартап Solaris восстанавливает заброшенные сельхозземли вместе с французскими муниципалитетами. Создаём «Оазисы» — подготовленные участки для земледелия с общей инфраструктурой.'},
+        {label:'C', fr:"Start-up Solaris. Agriculture. Municipalités.", ru:'Стартап Solaris. Сельское хозяйство. Муниципалитеты.'}
+      ], followUps:['Comment fonctionne votre modèle économique ?']},
+    { id:'q6', questionFr:'Avez-vous un titre de séjour ?', questionRu:'У вас есть вид на жительство?', chunks:['Passeport Talent','entrepreneur','innovant'],
+      variations:[
+        {label:'A', fr:"Oui, j'ai un Passeport Talent — catégorie entrepreneur innovant.", ru:'Да, у меня Passeport Talent — категория инновационный предприниматель.'},
+        {label:'B', fr:"Oui, je suis titulaire d'un Passeport Talent pour projet innovant. C'est un titre de séjour qui permet de développer un projet entrepreneurial en France.", ru:'Да, у меня Passeport Talent для инновационного проекта. Это вид на жительство для развития предпринимательского проекта во Франции.'},
+        {label:'C', fr:"Passeport Talent. Entrepreneur innovant.", ru:'Passeport Talent. Инновационный предприниматель.'}
+      ], followUps:[]},
+    { id:'q7', questionFr:'Parlez-vous français au quotidien ?', questionRu:'Вы говорите по-французски каждый день?', chunks:['quotidien','mairie','voisins','courses','Konstantin russe'],
+      variations:[
+        {label:'A', fr:"Oui, je parle français tous les jours — avec les voisins, à la mairie, pour les courses.", ru:'Да, говорю по-французски каждый день — с соседями, в мэрии, в магазинах.'},
+        {label:'B', fr:"Oui, le français est ma langue de travail et de vie quotidienne. Avec mon associé Konstantin, on parle en russe, mais tout le reste — les voisins, la mairie, les démarches, les courses — c'est en français.", ru:'Да, французский — мой рабочий и повседневный язык. С партнёром Константином говорим по-русски, но всё остальное — соседи, мэрия, магазины — по-французски.'},
+        {label:'C', fr:"Oui. Tous les jours. Voisins, mairie, courses.", ru:'Да. Каждый день. Соседи, мэрия, магазины.'}
+      ], followUps:[]},
+    { id:'q8', questionFr:'Avez-vous des amis français ?', questionRu:'Есть ли у вас французские друзья?', chunks:['Gonzague','Paris','Total','Orielle','mentor'],
+      variations:[
+        {label:'A', fr:"Oui. Mon ami proche Gonzague travaille chez Total à Paris. J'ai aussi Orielle, qui est mon mentor.", ru:'Да. Мой близкий друг Гонзаг работает в Total в Париже. Ещё есть Ориэль — мой ментор.'},
+        {label:'B', fr:"Oui, j'ai des amis français. Gonzague est un ami de longue date, il travaille chez Total Energy à Paris, avec sa femme Coraline. Orielle est mon mentor et une amie. Je suis aussi membre de French Tech Côte d'Azur.", ru:'Да. Гонзаг — давний друг, работает в Total Energy в Париже с женой Коралин. Ориэль — мой ментор и подруга. Также я участник French Tech Côte d\'Azur.'},
+        {label:'C', fr:"Oui. Gonzague, Orielle, French Tech.", ru:'Да. Гонзаг, Ориэль, French Tech.'}
+      ], followUps:['Comment vous êtes-vous rencontrés ?']},
+    { id:'q9', questionFr:'Suivez-vous l\'actualité française ?', questionRu:'Следите ли вы за французскими новостями?', chunks:['Le Monde','Mediapart','Brut','politique','économie'],
+      variations:[
+        {label:'A', fr:"Oui, je lis Le Monde et Mediapart régulièrement.", ru:'Да, регулярно читаю Le Monde и Mediapart.'},
+        {label:'B', fr:"Oui, je suis l'actualité française de près. Je lis Le Monde, Mediapart, et je regarde Brut. Je suis surtout la politique intérieure, l'économie et les questions liées à l'agriculture et au territoire.", ru:'Да, слежу за французскими новостями. Читаю Le Monde, Mediapart, смотрю Brut. Особенно интересуют внутренняя политика, экономика, аграрные вопросы.'},
+        {label:'C', fr:"Le Monde. Mediapart. Brut.", ru:'Le Monde. Mediapart. Brut.'}
+      ], followUps:['Quel sujet vous intéresse en ce moment ?']},
+    { id:'q10', questionFr:'Que savez-vous sur la laïcité ?', questionRu:'Что вы знаете о светскости?', chunks:['État neutre','religions','1905','croire','ne pas croire'],
+      variations:[
+        {label:'A', fr:"La laïcité, c'est la neutralité de l'État vis-à-vis des religions. Chacun est libre de croire ou de ne pas croire.", ru:'Светскость — это нейтральность государства по отношению к религиям. Каждый свободен верить или не верить.'},
+        {label:'B', fr:"La laïcité est un principe fondamental de la République française. L'État est neutre vis-à-vis des religions. La séparation de l'Église et de l'État date de 1905. Chacun est libre de croire ou de ne pas croire, et l'État ne favorise aucune religion.", ru:'Светскость — фундаментальный принцип Французской Республики. Государство нейтрально к религиям. Отделение церкви от государства — с 1905 года.'},
+        {label:'C', fr:"Neutralité de l'État. Liberté de croire. 1905.", ru:'Нейтральность государства. Свобода веры. 1905.'}
+      ], followUps:['Pouvez-vous donner un exemple concret ?']},
+    { id:'q15', questionFr:'Voyagez-vous en France ?', questionRu:'Путешествуете ли вы по Франции?', chunks:['Avignon','festival','théâtre','Tatiana','tradition','Paris','Marseille'],
+      variations:[
+        {label:'A', fr:"Oui. Chaque année, nous allons à Avignon avec Tatiana pour le festival de théâtre. C'est notre tradition.", ru:'Да. Каждый год ездим в Авиньон с Татьяной на театральный фестиваль. Это наша традиция.'},
+        {label:'B', fr:"Oui, je voyage en France. Chaque année, nous allons à Avignon avec Tatiana pour le festival de théâtre — c'est devenu notre tradition. Je connais bien Paris, je vais à Marseille, à Cannes. Et bien sûr, je connais bien ma région — le littoral et les montagnes.", ru:'Да, путешествую. Каждый год с Татьяной едем в Авиньон на фестиваль — это наша традиция. Хорошо знаю Париж, бываю в Марселе, Каннах.'},
+        {label:'C', fr:"Avignon chaque année. Paris. Marseille. Cannes.", ru:'Авиньон каждый год. Париж. Марсель. Канны.'}
+      ], followUps:['Quel endroit préférez-vous ?']},
+    { id:'q16', questionFr:'Pourquoi voulez-vous devenir citoyen français ?', questionRu:'Почему вы хотите стать французским гражданином?', chunks:['maison','femme','projet','amis','voter','participer'],
+      variations:[
+        {label:'A', fr:"Parce que la France est déjà ma maison. Ma femme est ici, mon projet est ici, mes amis sont ici. La nationalité, c'est la possibilité de participer pleinement — y compris voter.", ru:'Потому что Франция уже мой дом. Жена здесь, проект здесь, друзья здесь. Гражданство — возможность участвовать полноценно, включая голосование.'},
+        {label:'B', fr:"Parce que la France est déjà ma maison. Ma femme est ici, mon projet est ici, mes amis sont ici. Je vis à Peillon, je travaille avec les municipalités françaises, je participe à la vie de la communauté. La nationalité, pour moi, c'est la possibilité de participer pleinement — y compris voter et faire partie de ce pays non seulement par le fait d'y vivre, mais aussi par le statut.", ru:'Франция уже мой дом. Жена, проект, друзья — всё здесь. Живу в Пейоне, работаю с муниципалитетами. Гражданство — возможность быть частью страны не только по факту проживания, но и по статусу.'},
+        {label:'C', fr:"La France est ma maison. Femme, projet, amis — tout est ici. Je veux voter.", ru:'Франция — мой дом. Жена, проект, друзья — всё здесь. Хочу голосовать.'}
+      ], followUps:['Vous partagez les valeurs de la République ?','Et si votre start-up ne marche pas ?']},
+    { id:'q17', questionFr:'Que signifie pour vous la nationalité française ?', questionRu:'Что для вас означает французское гражданство?', chunks:['appartenance','responsabilité','pas seulement statut','participer'],
+      variations:[
+        {label:'A', fr:"C'est une appartenance civique complète — pas seulement un statut, mais aussi une responsabilité.", ru:'Это полная гражданская принадлежность — не только статус, но и ответственность.'},
+        {label:'B', fr:"Pour moi, la nationalité française signifie non seulement un statut juridique, mais une appartenance civique complète au pays où je vis déjà. C'est la responsabilité, la participation à la vie de la société, et la possibilité d'être un citoyen à part entière.", ru:'Для меня гражданство — не только юридический статус, а полная гражданская принадлежность к стране. Это ответственность и возможность быть полноправным гражданином.'},
+        {label:'C', fr:"Appartenance. Responsabilité. Participation.", ru:'Принадлежность. Ответственность. Участие.'}
+      ], followUps:[]},
+    { id:'q18', questionFr:'Qu\'est-ce que la France vous a apporté ?', questionRu:'Что Франция вам дала?', chunks:['écosystème','projets','culture','environnement professionnel'],
+      variations:[
+        {label:'A', fr:"La France m'a donné la possibilité de développer mes projets dans un environnement professionnel fort et une culture qui m'est proche.", ru:'Франция дала возможность развивать проекты в сильной профессиональной среде и близкой мне культуре.'},
+        {label:'B', fr:"Mon pays d'origine m'a donné l'éducation et la base professionnelle. La France m'a donné la possibilité de continuer ce chemin — développer mes projets, travailler dans une forte écosystème professionnelle, et vivre dans un environnement culturel très important pour moi.", ru:'Страна происхождения дала образование и профессиональную базу. Франция — возможность развивать проекты и жить в важной для меня культурной среде.'},
+        {label:'C', fr:"Projets. Écosystème professionnel. Culture.", ru:'Проекты. Профессиональная экосистема. Культура.'}
+      ], followUps:[]},
+    { id:'q19', questionFr:'Que pouvez-vous apporter à la France ?', questionRu:'Что вы можете привнести во Франции?', chunks:['déjà','Solaris','terres agricoles','économie locale','design','culture'],
+      variations:[
+        {label:'A', fr:"Je contribue déjà — ma start-up restaure des terres agricoles et soutient l'économie locale.", ru:'Я уже вношу вклад — мой стартап восстанавливает сельхозземли и поддерживает местную экономику.'},
+        {label:'B', fr:"J'apporte déjà une contribution à travers mon start-up Solaris — restauration de terres agricoles, soutien à l'économie locale, travail avec les territoires. À long terme, je vois aussi ma contribution dans la culture — design et art contemporain.", ru:'Уже вношу вклад через Solaris — восстановление земель, поддержка местной экономики. В долгосрочной перспективе — также через культуру, дизайн и современное искусство.'},
+        {label:'C', fr:"Solaris. Terres agricoles. Économie locale.", ru:'Solaris. Сельхозземли. Местная экономика.'}
+      ], followUps:[]},
+    { id:'q20', questionFr:'Comptez-vous continuer à vivre en France ?', questionRu:'Планируете ли вы продолжать жить во Франции?', chunks:['oui','femme','maison','projet','chienne','tout est ici'],
+      variations:[
+        {label:'A', fr:"Oui. Ma femme, mon projet, ma maison — tout est ici. C'est un fait, pas un plan.", ru:'Да. Жена, проект, дом — всё здесь. Это факт, не план.'},
+        {label:'B', fr:"Oui, absolument. Ma femme, mon projet, ma maison, ma chienne — tout est ici. La France, c'est mon chez-moi. Ce n'est pas un plan, c'est déjà un fait.", ru:'Да, безусловно. Жена, проект, дом, собака — всё здесь. Франция — мой дом. Это не план, а уже факт.'},
+        {label:'C', fr:"Oui. Tout est ici. C'est chez moi.", ru:'Да. Всё здесь. Это мой дом.'}
+      ], followUps:['Où vous voyez-vous dans 5–10 ans ?','Vous voulez acheter un logement ?']}
+  ],
+  facts: [
+    {q:'Devise de la République ?', a:'Liberté, Égalité, Fraternité'},
+    {q:'Que signifie Liberté ?', a:"Chacun est libre de s'exprimer, dans le cadre de la loi"},
+    {q:'Que signifie Égalité ?', a:'Tous les citoyens sont égaux devant la loi'},
+    {q:'Que signifie Fraternité ?', a:"Solidarité et entraide entre les citoyens"},
+    {q:"Qu'est-ce que la laïcité ?", a:"L'État est neutre vis-à-vis des religions"},
+    {q:'Séparation Église/État ?', a:'1905'},
+    {q:'Symboles de la République ?', a:'Drapeau, Marseillaise, Marianne, devise, coq gaulois'},
+    {q:'Couleurs du drapeau ?', a:'Bleu, blanc, rouge'},
+    {q:'Hymne national ?', a:'La Marseillaise'},
+    {q:'Qui a écrit la Marseillaise ?', a:'Rouget de Lisle, 1792'},
+    {q:'Qui est Marianne ?', a:'Symbole de la République et de la liberté'},
+    {q:"Qu'est-ce que la démocratie ?", a:'Pouvoir appartient au peuple'},
+    {q:'Trois pouvoirs ?', a:'Exécutif, législatif, judiciaire'},
+    {q:'Président de la France ?', a:'Emmanuel Macron'},
+    {q:'Premier ministre ?', a:'Sébastien Lecornu'},
+    {q:'Durée mandat présidentiel ?', a:'5 ans'},
+    {q:'Qui nomme le Premier ministre ?', a:'Le président'},
+    {q:'Le Parlement ?', a:"Assemblée nationale + Sénat"},
+    {q:'Droits du citoyen ?', a:"Voter, liberté d'expression, égalité devant la loi"},
+    {q:'Devoirs du citoyen ?', a:'Respecter les lois, payer les impôts, défense du pays'},
+    {q:'Révolution française ?', a:'1789'},
+    {q:'14 juillet 1789 ?', a:'Prise de la Bastille'},
+    {q:'Première Guerre mondiale ?', a:'1914–1918'},
+    {q:'11 novembre ?', a:'Fin de la Première Guerre mondiale'},
+    {q:'Seconde Guerre mondiale ?', a:'1939–1945'},
+    {q:'8 mai ?', a:"Victoire sur l'Allemagne nazie"},
+    {q:'Trois grandes villes ?', a:'Paris, Marseille, Lyon'},
+    {q:'Fleuves de France ?', a:'Seine, Loire, Rhône, Garonne'},
+    {q:'Pays frontaliers ?', a:'Belgique, Luxembourg, Allemagne, Suisse, Italie, Espagne, Andorre, Monaco'},
+    {q:'14 juillet ?', a:'Fête nationale'},
+    {q:'1er mai ?', a:'Fête du Travail'},
+    {q:'Monnaie ?', a:'Euro'},
+    {q:"Pays dans l'UE ?", a:'27'},
+    {q:'Étoiles drapeau européen ?', a:'12'}
+  ],
+  personalContext: "Nikolai Grigoriev, architecte, vit à Peillon (06) depuis 2022 avec sa femme Tatiana et leur chienne Etra (braque hongrois). Start-up Solaris avec Konstantin. Passeport Talent. Amis: Gonzague (Total Energy, Paris), Orielle (mentor), Olga (Avignon, théâtre). Membre French Tech Côte d'Azur. Avignon festival tradition annuelle. Lit Le Monde, Mediapart, Brut."
+};
+
+let APP = {
+  data: null,
+  progress: {},
+  currentQ: 0,
+  currentVar: 0,
+  currentFactRevealed: new Set(),
+  simIndex: -1,
+  settings: {
+    proxyUrl: '',
+    claudeKey: '',
+    notionPageId: '343dcfeccc3b80dcb2a9eff3a74ff792'
+  }
+};
+
+function loadProgress() {
+  try {
+    const s = localStorage.getItem('nat-trainer-progress');
+    if (s) APP.progress = JSON.parse(s);
+  } catch(e) {}
+}
+
+function saveProgress() {
+  localStorage.setItem('nat-trainer-progress', JSON.stringify(APP.progress));
+}
+
+function loadSettings() {
+  try {
+    const s = localStorage.getItem('nat-trainer-settings');
+    if (s) APP.settings = { ...APP.settings, ...JSON.parse(s) };
+  } catch(e) {}
+}
+
+function saveSettings() {
+  localStorage.setItem('nat-trainer-settings', JSON.stringify(APP.settings));
+}
+
+function getQProgress(qId) {
+  if (!APP.progress[qId]) {
+    APP.progress[qId] = { attempts: 0, lastScore: 0, lastDate: null, nextReview: null, status: 'new' };
+  }
+  return APP.progress[qId];
+}
+
+function updateQProgress(qId, score) {
+  const p = getQProgress(qId);
+  p.attempts++;
+  p.lastScore = score;
+  p.lastDate = new Date().toISOString();
+  if (score >= 3) {
+    p.status = 'mastered';
+    const days = Math.min(p.attempts * 2, 14);
+    p.nextReview = new Date(Date.now() + days * 86400000).toISOString();
+  } else if (score >= 2) {
+    p.status = 'learning';
+    p.nextReview = new Date(Date.now() + 86400000).toISOString();
+  } else {
+    p.status = 'new';
+    p.nextReview = new Date().toISOString();
+  }
+  saveProgress();
+}
+
+async function fetchNotionData() {
+  if (!APP.settings.proxyUrl) return null;
+  try {
+    const url = APP.settings.proxyUrl.replace(/\/$/, '') + '/api/data';
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('Proxy error ' + res.status);
+    const data = await res.json();
+    if (data.questions && data.questions.length > 0) return data;
+    return null;
+  } catch(e) {
+    console.warn('Notion fetch failed:', e);
+    return null;
+  }
+}
+
+async function initData() {
+  const notion = await fetchNotionData();
+  if (notion && notion.questions.length > 0) {
+    APP.data = notion;
+    document.getElementById('status-line').textContent = `${notion.questions.length} questions from Notion`;
+  } else {
+    APP.data = FALLBACK_DATA;
+    document.getElementById('status-line').textContent = APP.settings.proxyUrl
+      ? 'Using built-in data (Notion unavailable)'
+      : 'Using built-in data — set proxy URL in Settings';
+  }
+  renderAll();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  const btns = document.querySelectorAll('.nav button');
+  const names = ['core','variations','sim','facts','progress','settings'];
+  const idx = names.indexOf(id);
+  if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
+  if (id === 'progress') renderProgress();
+  if (id === 'facts') renderFacts();
+}
+
+function renderAll() {
+  renderCore();
+  renderVariations();
+  renderSim();
+  renderFacts();
+  renderProgress();
+  renderSettings();
+}
+
+function renderCore() {
+  const q = APP.data.questions[APP.currentQ];
+  if (!q) return;
+  const p = getQProgress(q.id);
+  const pct = p.status === 'mastered' ? 100 : p.status === 'learning' ? 50 : 0;
+  const el = document.getElementById('screen-core');
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Question ${APP.currentQ + 1} / ${APP.data.questions.length}</div>
+      <div class="question-fr">${esc(q.questionFr)}</div>
+      ${q.questionRu ? `<div class="question-ru">${esc(q.questionRu)}</div>` : ''}
+      <div class="label" style="margin-top:14px">Anchors</div>
+      <div class="chunks">${q.chunks.map(c => `<span class="chunk">${esc(c)}</span>`).join('')}</div>
+      <div class="label">Build your answer from anchors</div>
+      <textarea class="textarea" id="core-input" placeholder="Je m'appelle Nikolai...">${getCoreInput(q.id)}</textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="checkWithAI()" id="btn-check">Check with AI</button>
+        <button class="btn" onclick="showReference()">Show reference</button>
+      </div>
+      <div class="ai-box" id="ai-feedback"></div>
+      <div id="reference-block"></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="pager">
+      <button class="btn" onclick="prevQ()" ${APP.currentQ === 0 ? 'disabled' : ''}>← Back</button>
+      <span class="pager-info">${APP.currentQ + 1} / ${APP.data.questions.length}</span>
+      <button class="btn" onclick="nextQ()" ${APP.currentQ >= APP.data.questions.length - 1 ? 'disabled' : ''}>Next →</button>
+    </div>`;
+  const inp = document.getElementById('core-input');
+  inp.addEventListener('input', () => saveCoreInput(q.id, inp.value));
+}
+
+function getCoreInput(qId) {
+  try { return localStorage.getItem('nat-input-' + qId) || ''; } catch(e) { return ''; }
+}
+function saveCoreInput(qId, val) {
+  localStorage.setItem('nat-input-' + qId, val);
+}
+
+function prevQ() { if (APP.currentQ > 0) { APP.currentQ--; renderCore(); renderVariations(); } }
+function nextQ() { if (APP.currentQ < APP.data.questions.length - 1) { APP.currentQ++; renderCore(); renderVariations(); } }
+
+function showReference() {
+  const q = APP.data.questions[APP.currentQ];
+  const v = q.variations[1] || q.variations[0];
+  if (!v) return;
+  document.getElementById('reference-block').innerHTML = `
+    <div class="answer-block" style="margin-top:12px">
+      ${esc(v.fr)}
+      ${v.ru ? `<div class="answer-ru">${esc(v.ru)}</div>` : ''}
+    </div>`;
+}
+
+async function checkWithAI() {
+  const key = APP.settings.claudeKey;
+  if (!key) { showAIFeedback('Set your Claude API key in Settings first.', true); return; }
+  const q = APP.data.questions[APP.currentQ];
+  const input = document.getElementById('core-input').value.trim();
+  if (!input) { showAIFeedback('Write something first!', true); return; }
+
+  const btn = document.getElementById('btn-check');
+  btn.disabled = true; btn.textContent = 'Checking...';
+
+  const ref = q.variations.map(v => v.fr).join('\n---\n');
+  const sysPrompt = `You are a French language teacher preparing a student for a naturalisation interview. The student's native language is Russian. Evaluate their French answer. Be encouraging but precise. Point out grammar errors (max 2), suggest improvements, and rate 1-5. Respond in Russian. Format:
+Оценка: X/5
+[Your feedback in Russian, 2-3 sentences max]
+
+Context about the student: ${APP.data.personalContext || ''}`;
+
+  const userMsg = `Question: ${q.questionFr}
+Student's answer: ${input}
+Reference answers:
+${ref}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, system: sysPrompt, messages: [{ role: 'user', content: userMsg }] })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+    const data = await res.json();
+    const text = data.content.map(c => c.text || '').join('');
+    showAIFeedback(text);
+
+    const scoreMatch = text.match(/(\d)\/5/);
+    if (scoreMatch) {
+      updateQProgress(q.id, parseInt(scoreMatch[1]));
+      renderCore();
+    }
+  } catch(e) {
+    showAIFeedback('Error: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Check with AI';
+  }
+}
+
+function showAIFeedback(text, isError) {
+  const el = document.getElementById('ai-feedback');
+  el.textContent = text;
+  el.className = 'ai-box visible' + (isError ? ' error' : '');
+}
+
+function renderVariations() {
+  const q = APP.data.questions[APP.currentQ];
+  if (!q) return;
+  const labels = ['A Simple','B Medium','C Full'];
+  const el = document.getElementById('screen-variations');
+  const v = q.variations[APP.currentVar] || q.variations[0];
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Question ${APP.currentQ + 1} / ${APP.data.questions.length}</div>
+      <div class="question-fr">${esc(q.questionFr)}</div>
+      ${q.questionRu ? `<div class="question-ru">${esc(q.questionRu)}</div>` : ''}
+      <div class="var-tabs">
+        ${q.variations.map((vv, i) => `<button class="var-tab ${i === APP.currentVar ? 'active' : ''}" onclick="setVar(${i})">${labels[i] || vv.label}</button>`).join('')}
+      </div>
+      ${v ? `<div class="answer-block">${esc(v.fr)}${v.ru ? `<div class="answer-ru">${esc(v.ru)}</div>` : ''}</div>` : ''}
+      <div class="chunks" style="margin-top:10px">${q.chunks.map(c => `<span class="chunk">${esc(c)}</span>`).join('')}</div>
+      ${q.followUps && q.followUps.length ? `<div class="label" style="margin-top:14px">Possible follow-ups</div>${q.followUps.map(f => `<div style="font-size:13px;color:var(--text2);padding:4px 0;font-style:italic">« ${esc(f)} »</div>`).join('')}` : ''}
+    </div>
+    <div class="pager">
+      <button class="btn" onclick="prevQ()" ${APP.currentQ === 0 ? 'disabled' : ''}>← Back</button>
+      <span class="pager-info">${APP.currentQ + 1} / ${APP.data.questions.length}</span>
+      <button class="btn" onclick="nextQ()" ${APP.currentQ >= APP.data.questions.length - 1 ? 'disabled' : ''}>Next →</button>
+    </div>`;
+}
+
+function setVar(i) { APP.currentVar = i; renderVariations(); }
+
+function renderSim() {
+  const el = document.getElementById('screen-sim');
+  const allQs = APP.data.questions;
+  const followUps = allQs.flatMap(q => (q.followUps || []).map(f => ({ questionFr: f, questionRu: '', chunks: q.chunks, variations: q.variations, id: q.id + '-fu', followUps: [] })));
+  const pool = [...allQs, ...followUps];
+
+  if (APP.simIndex < 0) APP.simIndex = Math.floor(Math.random() * pool.length);
+  const q = pool[APP.simIndex];
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Interview simulation</div>
+      <div class="sim-question">« ${esc(q.questionFr)} »</div>
+      <textarea class="textarea" id="sim-input" placeholder="Your answer in French..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="simCheck()">Submit answer</button>
+        <button class="btn" onclick="simHint()">Hint (anchors)</button>
+        <button class="btn" onclick="simSkip()">Skip</button>
+      </div>
+      <div class="ai-box" id="sim-feedback"></div>
+      <div id="sim-hint" style="display:none"></div>
+    </div>
+    <div class="hint-text">Questions appear in random order, including follow-ups.</div>`;
+}
+
+function simSkip() {
+  const allQs = APP.data.questions;
+  const followUps = allQs.flatMap(q => (q.followUps || []).map(f => ({ questionFr: f, id: q.id + '-fu', chunks: q.chunks, variations: q.variations, followUps: [] })));
+  const pool = [...allQs, ...followUps];
+  APP.simIndex = Math.floor(Math.random() * pool.length);
+  renderSim();
+}
+
+function simHint() {
+  const allQs = APP.data.questions;
+  const followUps = allQs.flatMap(q => (q.followUps || []).map(f => ({ questionFr: f, id: q.id + '-fu', chunks: q.chunks, variations: q.variations, followUps: [] })));
+  const pool = [...allQs, ...followUps];
+  const q = pool[APP.simIndex];
+  document.getElementById('sim-hint').style.display = 'block';
+  document.getElementById('sim-hint').innerHTML = `<div class="chunks" style="margin-top:8px">${(q.chunks || []).map(c => `<span class="chunk">${esc(c)}</span>`).join('')}</div>`;
+}
+
+async function simCheck() {
+  const key = APP.settings.claudeKey;
+  if (!key) { showSimFeedback('Set your Claude API key in Settings first.', true); return; }
+  const allQs = APP.data.questions;
+  const followUps = allQs.flatMap(q => (q.followUps || []).map(f => ({ questionFr: f, id: q.id + '-fu', chunks: q.chunks, variations: q.variations, followUps: [] })));
+  const pool = [...allQs, ...followUps];
+  const q = pool[APP.simIndex];
+  const input = document.getElementById('sim-input').value.trim();
+  if (!input) { showSimFeedback('Write something first!', true); return; }
+
+  const ref = (q.variations || []).map(v => v.fr).join('\n---\n');
+  const sysPrompt = `You are a French prefectural agent conducting a naturalisation interview simulation. Evaluate the candidate's answer. Be encouraging but honest. Point out max 2 grammar errors. Suggest a better formulation if needed. Rate 1-5. Respond in Russian.
+Format:
+Оценка: X/5
+[Feedback in Russian, 2-3 sentences]
+
+Candidate info: ${APP.data.personalContext || ''}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, system: sysPrompt, messages: [{ role: 'user', content: `Question: ${q.questionFr}\nAnswer: ${input}\nReference: ${ref}` }] })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c => c.text || '').join('') || 'No response';
+    showSimFeedback(text);
+    const scoreMatch = text.match(/(\d)\/5/);
+    if (scoreMatch) updateQProgress(q.id, parseInt(scoreMatch[1]));
+  } catch(e) {
+    showSimFeedback('Error: ' + e.message, true);
+  }
+}
+
+function showSimFeedback(text, isError) {
+  const el = document.getElementById('sim-feedback');
+  el.textContent = text;
+  el.className = 'ai-box visible' + (isError ? ' error' : '');
+}
+
+function renderFacts() {
+  const el = document.getElementById('screen-facts');
+  const facts = APP.data.facts;
+  el.innerHTML = facts.map((f, i) => `
+    <div class="card fact-card" onclick="revealFact(${i})">
+      <div class="fact-q">${esc(f.q)}</div>
+      <div class="fact-a ${APP.currentFactRevealed.has(i) ? '' : 'fact-hidden'}" id="fact-${i}">${esc(f.a)}</div>
+    </div>`).join('') +
+    `<div class="btn-row" style="justify-content:center;margin-top:12px">
+      <button class="btn" onclick="resetFacts()">Hide all</button>
+      <button class="btn" onclick="revealAllFacts()">Show all</button>
+    </div>
+    <div class="hint-text" style="margin-top:8px">Tap to reveal answers</div>`;
+}
+
+function revealFact(i) {
+  APP.currentFactRevealed.add(i);
+  const el = document.getElementById('fact-' + i);
+  if (el) el.classList.remove('fact-hidden');
+}
+
+function revealAllFacts() {
+  APP.data.facts.forEach((_, i) => APP.currentFactRevealed.add(i));
+  renderFacts();
+}
+
+function resetFacts() {
+  APP.currentFactRevealed.clear();
+  renderFacts();
+}
+
+function renderProgress() {
+  const el = document.getElementById('screen-progress');
+  const qs = APP.data.questions;
+  let mastered = 0, learning = 0, newQ = 0;
+  qs.forEach(q => {
+    const p = getQProgress(q.id);
+    if (p.status === 'mastered') mastered++;
+    else if (p.status === 'learning') learning++;
+    else newQ++;
+  });
+
+  const dueForReview = qs.filter(q => {
+    const p = getQProgress(q.id);
+    return p.nextReview && new Date(p.nextReview) <= new Date();
+  });
+
+  el.innerHTML = `
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-num" style="color:var(--green)">${mastered}</div><div class="stat-label">Mastered</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${learning}</div><div class="stat-label">Learning</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--text3)">${newQ}</div><div class="stat-label">New</div></div>
+    </div>
+    ${dueForReview.length ? `<div class="card" style="margin-bottom:12px"><div class="label">Due for review (${dueForReview.length})</div>${dueForReview.map(q => `<div class="q-item" onclick="goToQ('${q.id}')"><span class="q-dot learning"></span>${esc(q.questionFr)}</div>`).join('')}</div>` : ''}
+    <div class="card">
+      <div class="label">All questions</div>
+      <ul class="q-list">
+        ${qs.map(q => { const p = getQProgress(q.id); return `<li class="q-item" onclick="goToQ('${q.id}')"><span class="q-dot ${p.status}"></span>${esc(q.questionFr)}</li>`; }).join('')}
+      </ul>
+    </div>
+    <div class="btn-row" style="justify-content:center;margin-top:12px">
+      <button class="btn" onclick="exportProgress()">Export progress</button>
+      <button class="btn" onclick="document.getElementById('import-file').click()">Import progress</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importProgress(event)">
+      <button class="btn" onclick="if(confirm('Reset all progress?')){APP.progress={};saveProgress();renderProgress();}">Reset</button>
+    </div>`;
+}
+
+function goToQ(qId) {
+  const idx = APP.data.questions.findIndex(q => q.id === qId);
+  if (idx >= 0) { APP.currentQ = idx; showScreen('core'); renderCore(); }
+}
+
+function exportProgress() {
+  const blob = new Blob([JSON.stringify(APP.progress, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nat-trainer-progress.json';
+  a.click();
+}
+
+function importProgress(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      APP.progress = JSON.parse(e.target.result);
+      saveProgress();
+      renderProgress();
+    } catch(err) { alert('Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+}
+
+function renderSettings() {
+  const el = document.getElementById('screen-settings');
+  el.innerHTML = `
+    <div class="card">
+      <div class="label">Connection</div>
+      <div class="settings-row">
+        <span class="settings-label">Proxy URL</span>
+        <input class="settings-input" id="set-proxy" value="${esc(APP.settings.proxyUrl)}" placeholder="https://your-proxy.onrender.com">
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Claude API key</span>
+        <input class="settings-input" id="set-claude" type="password" value="${esc(APP.settings.claudeKey)}" placeholder="sk-ant-...">
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Notion page ID</span>
+        <input class="settings-input" id="set-notion" value="${esc(APP.settings.notionPageId)}" placeholder="343dcfeccc3b...">
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-primary" onclick="saveSettingsForm()">Save settings</button>
+        <button class="btn" onclick="testConnection()">Test connection</button>
+      </div>
+      <div class="ai-box" id="settings-status"></div>
+    </div>
+    <div class="card">
+      <div class="label">About</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6">
+        Naturalisation Interview Trainer<br>
+        Data source: Notion page (synced on load)<br>
+        AI feedback: Claude API (Anthropic)<br>
+        Progress saved automatically in browser
+      </div>
+    </div>`;
+}
+
+function saveSettingsForm() {
+  APP.settings.proxyUrl = document.getElementById('set-proxy').value.trim();
+  APP.settings.claudeKey = document.getElementById('set-claude').value.trim();
+  APP.settings.notionPageId = document.getElementById('set-notion').value.trim();
+  saveSettings();
+  const el = document.getElementById('settings-status');
+  el.textContent = 'Settings saved.';
+  el.className = 'ai-box visible';
+  initData();
+}
+
+async function testConnection() {
+  const el = document.getElementById('settings-status');
+  el.textContent = 'Testing...';
+  el.className = 'ai-box visible';
+  try {
+    const url = APP.settings.proxyUrl.replace(/\/$/, '') + '/health';
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      el.textContent = 'Proxy: connected. Fetching data...';
+      const data = await fetchNotionData();
+      if (data) {
+        el.textContent = `Connected! Found ${data.questions.length} questions, ${data.facts.length} facts.`;
+      } else {
+        el.textContent = 'Proxy connected but no data from Notion. Check page structure.';
+        el.className = 'ai-box visible error';
+      }
+    } else {
+      el.textContent = 'Proxy returned error ' + res.status;
+      el.className = 'ai-box visible error';
+    }
+  } catch(e) {
+    el.textContent = 'Connection failed: ' + e.message;
+    el.className = 'ai-box visible error';
+  }
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadProgress();
+loadSettings();
+initData();
+</script>
+</body>
+</html>
