@@ -40,7 +40,86 @@ function extractText(richTextArr) {
   return richTextArr.map(t => t.plain_text || '').join('');
 }
 
+function blockText(block) {
+  const type = block.type;
+  const richContainers = ['heading_1', 'heading_2', 'heading_3', 'paragraph', 'quote', 'callout', 'bulleted_list_item', 'numbered_list_item', 'toggle', 'to_do'];
+  if (richContainers.includes(type) && block[type] && block[type].rich_text) {
+    return extractText(block[type].rich_text).trim();
+  }
+  return '';
+}
+
+function parseFlat(blocks) {
+  const data = {
+    questions: [],
+    facts: [],
+    personalContext: '',
+    raw: []
+  };
+  // "1. FR — RU" or "5–6. FR — RU" or "21) FR - RU"
+  const qRegex = /^(\d+(?:\s*[-–—]\s*\d+)?)\s*[.):]\s+(.+?)\s+[—–−-]\s+(.+)$/;
+  let current = null;
+
+  for (const block of blocks) {
+    const type = block.type;
+    const text = blockText(block);
+    data.raw.push({ type, text, id: block.id, has_children: block.has_children });
+
+    if (!text) continue;
+    if (type === 'divider') continue;
+
+    if (type === 'heading_1' || type === 'heading_2' || type === 'heading_3') {
+      // section break — flush current question
+      if (current) { data.questions.push(current); current = null; }
+      continue;
+    }
+
+    const m = text.match(qRegex);
+    if (m) {
+      if (current) data.questions.push(current);
+      current = {
+        id: block.id,
+        questionFr: m[2].trim(),
+        questionRu: m[3].trim(),
+        chunks: [],
+        variations: [],
+        followUps: []
+      };
+      continue;
+    }
+
+    if (current) {
+      // plain text following a question = answer draft, append to variation A
+      if (current.variations.length === 0) {
+        current.variations.push({ label: 'A', fr: '', ru: text });
+      } else {
+        current.variations[0].ru += (current.variations[0].ru ? '\n' : '') + text;
+      }
+    }
+  }
+
+  if (current) data.questions.push(current);
+
+  // frontend requires at least one variation; pad empties to avoid crashes
+  for (const q of data.questions) {
+    if (q.variations.length === 0) {
+      q.variations.push({ label: 'A', fr: '', ru: '' });
+    }
+  }
+  return data;
+}
+
 function parseBlocks(blocks) {
+  const structured = parseStructured(blocks);
+  if (structured.questions.length > 0 || structured.facts.length > 0 || structured.personalContext) {
+    return structured;
+  }
+  const flat = parseFlat(blocks);
+  flat.raw = structured.raw;
+  return flat;
+}
+
+function parseStructured(blocks) {
   const data = {
     questions: [],
     facts: [],
@@ -56,19 +135,9 @@ function parseBlocks(blocks) {
 
   for (const block of blocks) {
     const type = block.type;
-    let text = '';
+    const text = blockText(block);
 
-    if (type === 'heading_1' || type === 'heading_2' || type === 'heading_3') {
-      text = extractText(block[type].rich_text).trim();
-    } else if (type === 'paragraph') {
-      text = extractText(block.paragraph.rich_text).trim();
-    } else if (type === 'bulleted_list_item') {
-      text = extractText(block.bulleted_list_item.rich_text).trim();
-    } else if (type === 'numbered_list_item') {
-      text = extractText(block.numbered_list_item.rich_text).trim();
-    } else if (type === 'toggle') {
-      text = extractText(block.toggle.rich_text).trim();
-    } else if (type === 'divider') {
+    if (type === 'divider') {
       continue;
     }
 
