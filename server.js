@@ -89,12 +89,16 @@ function parseFlat(blocks) {
     }
 
     if (current) {
-      // plain text following a question = answer draft, append to variation A
+      // plain text after a question = sample answer. Route by script:
+      // Cyrillic-majority -> ru, otherwise -> fr (frontend uses fr as Claude reference).
+      const cyr = (text.match(/[\u0400-\u04FF]/g) || []).length;
+      const lat = (text.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+      const bucket = cyr > lat ? 'ru' : 'fr';
       if (current.variations.length === 0) {
-        current.variations.push({ label: 'A', fr: '', ru: text });
-      } else {
-        current.variations[0].ru += (current.variations[0].ru ? '\n' : '') + text;
+        current.variations.push({ label: 'A', fr: '', ru: '' });
       }
+      const v = current.variations[0];
+      v[bucket] += (v[bucket] ? '\n' : '') + text;
     }
   }
 
