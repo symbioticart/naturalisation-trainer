@@ -408,9 +408,9 @@ function renderCore() {
       <div class="label">Question ${APP.currentQ + 1} / ${APP.data.questions.length}</div>
       <div class="question-fr">${esc(q.questionFr)}</div>
       ${q.questionRu ? `<div class="question-ru">${esc(q.questionRu)}</div>` : ''}
-      <div class="label" style="margin-top:14px">Anchors</div>
-      <div class="chunks">${q.chunks.map(c => `<span class="chunk">${esc(c)}</span>`).join('')}</div>
-      <div class="label">Build your answer from anchors</div>
+      ${q.chunks && q.chunks.length ? `<div class="label" style="margin-top:14px">Anchors</div>
+      <div class="chunks">${q.chunks.map(c => `<span class="chunk">${esc(c)}</span>`).join('')}</div>` : ''}
+      <div class="label">Build your answer${q.chunks && q.chunks.length ? ' from anchors' : ''}</div>
       <textarea class="textarea" id="core-input" placeholder="Je m'appelle Nikolai...">${getCoreInput(q.id)}</textarea>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="checkWithAI()" id="btn-check">Check with AI</button>

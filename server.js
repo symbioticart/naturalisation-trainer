@@ -49,6 +49,43 @@ function blockText(block) {
   return '';
 }
 
+const FR_STOPWORDS = new Set([
+  'Je','Nous','Vous','Il','Elle','Ils','Elles','On','Ma','Mon','Mes','Ta','Ton','Tes','Sa','Son','Ses',
+  'Notre','Votre','Leur','Leurs','Le','La','Les','Un','Une','Des','Du','De','Au','Aux','À','En','Dans',
+  'Sur','Sous','Par','Pour','Avec','Sans','Chez','Et','Ou','Mais','Donc','Car','Si','Que','Qui','Quand',
+  'Où','Comment','Pourquoi','Oui','Non','Ce','Cette','Ces','Cet','Ça','Cela','Quel','Quelle','Quels',
+  'Quelles','Tout','Tous','Toute','Toutes','Aussi','Très','Plus','Moins','Bien','Beaucoup','Peu','Trop',
+  'Alors','Ainsi','Puis','Après','Avant','Déjà','Depuis','Pendant','Entre','Vers','Ici','Là','Encore',
+  'Toujours','Jamais','Rien','Personne','Oh','Ah','Eh','Voici','Voilà','Puisque','Parce','Comme','Tant'
+]);
+
+function extractAnchors(frText, ruText) {
+  const src = frText || ruText || '';
+  if (!src) return [];
+  const anchors = [];
+  const seen = new Set();
+  // Capitalized words (proper nouns): Latin + accented chars
+  const propRe = /[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'\-]+/g;
+  let m;
+  while ((m = propRe.exec(src)) !== null) {
+    const w = m[0].replace(/[-']+$/, '');
+    if (w.length < 2) continue;
+    if (FR_STOPWORDS.has(w)) continue;
+    const key = w.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    anchors.push(w);
+    if (anchors.length >= 8) break;
+  }
+  // Years (historical range 1000-2099)
+  const years = src.match(/\b(?:1[0-9]|20)\d{2}\b/g) || [];
+  for (const y of years) {
+    if (anchors.length >= 8) break;
+    if (!seen.has(y)) { seen.add(y); anchors.push(y); }
+  }
+  return anchors;
+}
+
 function parseFlat(blocks) {
   const data = {
     questions: [],
@@ -108,6 +145,10 @@ function parseFlat(blocks) {
   for (const q of data.questions) {
     if (q.variations.length === 0) {
       q.variations.push({ label: 'A', fr: '', ru: '' });
+    }
+    // auto-generate anchors if not provided explicitly
+    if (q.chunks.length === 0) {
+      q.chunks = extractAnchors(q.variations[0].fr, q.variations[0].ru);
     }
   }
   return data;
