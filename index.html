@@ -755,22 +755,38 @@ function saveSettingsForm() {
 
 async function testConnection() {
   const el = document.getElementById('settings-status');
-  el.textContent = 'Testing...';
+  el.textContent = 'Testing (may take up to 60s on cold start)…';
   el.className = 'ai-box visible';
+  // Read directly from the input so Save is not required first
+  const inputVal = (document.getElementById('set-proxy').value || '').trim();
+  const proxy = inputVal || APP.settings.proxyUrl || '';
+  if (!proxy) {
+    el.textContent = 'Enter a proxy URL first.';
+    el.className = 'ai-box visible error';
+    return;
+  }
+  const base = proxy.replace(/\/$/, '');
   try {
-    const url = APP.settings.proxyUrl.replace(/\/$/, '') + '/health';
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (res.ok) {
-      el.textContent = 'Proxy: connected. Fetching data...';
-      const data = await fetchNotionData();
-      if (data) {
-        el.textContent = `Connected! Found ${data.questions.length} questions, ${data.facts.length} facts.`;
-      } else {
-        el.textContent = 'Proxy connected but no data from Notion. Check page structure.';
-        el.className = 'ai-box visible error';
-      }
+    const healthRes = await fetch(base + '/health', { signal: AbortSignal.timeout(60000) });
+    if (!healthRes.ok) {
+      el.textContent = `Proxy /health returned error ${healthRes.status}`;
+      el.className = 'ai-box visible error';
+      return;
+    }
+    el.textContent = 'Proxy: connected. Fetching data from Notion…';
+    const dataRes = await fetch(base + '/api/data', { signal: AbortSignal.timeout(60000) });
+    if (!dataRes.ok) {
+      const body = await dataRes.text();
+      el.textContent = `Proxy /api/data returned ${dataRes.status}: ${body.slice(0, 200)}`;
+      el.className = 'ai-box visible error';
+      return;
+    }
+    const data = await dataRes.json();
+    if (data.questions && data.questions.length > 0) {
+      el.textContent = `Connected! Found ${data.questions.length} questions, ${data.facts.length} facts.`;
+      el.className = 'ai-box visible';
     } else {
-      el.textContent = 'Proxy returned error ' + res.status;
+      el.textContent = 'Proxy connected but 0 questions from Notion. Check page structure or sharing.';
       el.className = 'ai-box visible error';
     }
   } catch(e) {
